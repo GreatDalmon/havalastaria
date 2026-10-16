@@ -1,0 +1,16 @@
+{% extends 'listings/base.html' %}
+
+{% block title %}Register - Havalastaria{% endblock %}
+
+{% block content %}
+<div class="card narrow" style="max-width:440px;margin-top:40px">
+  <h2>Create an account</h2>
+  <p class="ar" style="margin:-8px 0 20px">Join Havalastaria to book tours and request viewings.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn">Register</button>
+  </form>
+  <p class="alt">Already have an account? <a href="{% url 'login' %}">Log in here</a></p>
+</div>
+{% endblock %}

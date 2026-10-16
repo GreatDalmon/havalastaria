@@ -1,0 +1,60 @@
+{% extends 'listings/base.html' %}
+{% load listing_extras %}
+{% block title %}Users & agents - Havalastaria{% endblock %}
+
+{% block content %}
+<style>
+.af{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;margin-top:16px}
+.af p{margin:0 0 12px}.af p:last-of-type,.af .btn{grid-column:1/-1}
+.af label{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
+.af input,.af textarea{width:100%;border:1px solid var(--ln);background:var(--bg);color:var(--ink);border-radius:14px;padding:10px 14px;font:500 15px Figtree,sans-serif}
+.af .errorlist{color:#E5484D;list-style:none;padding:0;margin:0 0 4px;font-size:13px}
+summary{cursor:pointer;font:700 17px "Bricolage Grotesque",sans-serif}
+.bd2{display:inline-block;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:600;background:var(--bg);border:1px solid var(--ln)}
+.bd2.a{background:var(--ac);color:var(--ai);border-color:var(--ac)}
+.ac{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.ac form{display:flex;gap:6px;margin:0}
+.ac input{width:130px;border:1px solid var(--ln);background:var(--bg);color:var(--ink);border-radius:99px;padding:6px 12px;font:500 14px Figtree,sans-serif}
+.ac .pill{padding:6px 14px;font-size:13px}
+@media(max-width:700px){.af{grid-template-columns:1fr}}
+</style>
+<div class="dash">
+  {% include 'listings/_sidebar.html' with active='users' %}
+  <div>
+    <div class="dh"><div><h1>Users &amp; agents</h1><p>{{ users|length }} account{{ users|length|pluralize }} · create agents and manage access</p></div></div>
+
+    <details class="pn" {% if form.errors %}open{% endif %} style="margin-bottom:14px">
+      <summary>＋ Add a new agent</summary>
+      <form method="post" action="{% url 'listings:add_agent' %}" class="af">{% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn">Create agent account</button>
+      </form>
+    </details>
+
+    <div class="pn tb"><table>
+      <tr><th>User</th><th>Role</th><th>Listings</th><th>Status</th><th>Actions</th></tr>
+      {% for u in users %}
+      <tr>
+        <td><b>{{ u|display_name }}</b><div class="ar">{{ u.username }}</div></td>
+        <td>{% if u.is_superuser %}<span class="bd2 a">Superuser</span>{% elif u.is_staff %}<span class="bd2 a">Staff</span>{% endif %}
+            {% if u.agent %}<span class="bd2">Agent</span>{% elif not u.is_staff %}<span class="bd2">Member</span>{% endif %}</td>
+        <td>{{ u.n }}</td>
+        <td>{% if u.is_active %}Active{% else %}<span style="color:#E5484D">Disabled</span>{% endif %}</td>
+        <td>
+          {% if u.is_superuser and not user.is_superuser %}<span class="ar">Protected</span>{% else %}
+          <div class="ac">
+            {% if u.agent %}
+              <form method="post" action="{% url 'listings:user_action' u.id 'remove_agent' %}" onsubmit="return confirm('Remove the agent role from {{ u.username|escapejs }}?')">{% csrf_token %}<button class="pill">Remove agent</button></form>
+            {% else %}
+              <form method="post" action="{% url 'listings:user_action' u.id 'make_agent' %}">{% csrf_token %}<input name="phone_number" placeholder="Phone" required aria-label="Phone number"><button class="pill">Make agent</button></form>
+            {% endif %}
+            {% if u != user %}
+              <form method="post" action="{% url 'listings:user_action' u.id 'toggle_active' %}">{% csrf_token %}<button class="pill">{% if u.is_active %}Disable{% else %}Enable{% endif %}</button></form>
+            {% endif %}
+          </div>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table></div>
+  </div>
+</div>
+{% endblock %}

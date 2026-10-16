@@ -1,0 +1,8 @@
+<nav class="sidebar" aria-label="Dashboard">
+  <a href="{% url 'listings:dashboard' %}"{% if active == 'dash' %} class="on"{% endif %}>▦ Dashboard</a>
+  <a href="{% url 'listings:index' %}">⌂ Listings</a>
+  <a href="{% url 'listings:inbox' %}"{% if active == 'inbox' %} class="on"{% endif %}>✉ Messages{% if unread_count %} <b class="bdg">{{ unread_count }}</b>{% endif %}</a>
+  {% if is_agent %}<a href="{% url 'listings:create_listing' %}">＋ New listing</a>{% endif %}
+  {% if user.is_superuser %}<a href="{% url 'listings:manage_users' %}"{% if active == 'users' %} class="on"{% endif %}>☺ Users &amp; agents</a>
+  <a href="/admin/">⚙ Admin</a>{% endif %}
+</nav>

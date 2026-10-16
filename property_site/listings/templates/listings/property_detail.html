@@ -1,0 +1,58 @@
+{% extends 'listings/base.html' %}
+{% load listing_extras %}
+
+{% block content %}
+<a href="{% url 'listings:index' %}" class="back">&larr; Back to Listings</a>
+
+<div class="detail">
+  <div>
+    <div class="hero-img{% if not property.image %} ph{% endif %}">
+      {% if property.image %}<img src="{{ property.image.url }}" alt="{{ property.title }}" onerror="this.parentNode.classList.add('ph');this.remove()">{% endif %}
+    </div>
+    <h1 style="font-size:clamp(30px,4.5vw,48px);margin-top:24px">{{ property.title }}</h1>
+    <div class="ar" style="font-size:17px">{{ property.location|default:"Location not specified" }}</div>
+    <div class="facts">
+      <b>{{ property.bedrooms }} bedrooms</b>
+      <b>{{ property.bathrooms|floatformat:'-1' }} bathrooms</b>
+      <b>{{ property.square_feet|floatformat:'0g' }} sq ft</b>
+      <b>Built {{ property.year_built }}</b>
+      <b>{{ property.get_property_type_display }}</b>
+    </div>
+    <h3>Description</h3>
+    <p style="color:var(--mu);white-space:pre-line;max-width:68ch">{{ property.description }}</p>
+  </div>
+
+  <aside class="card side">
+    <div class="ar">{{ property.get_property_type_display }}</div>
+    <div class="pr">${{ property.price|floatformat:'0g' }}</div>
+
+    {% if property.agent %}
+      <div class="agent">
+        <h4>Agent Contact Information</h4>
+        <p>Name: {{ property.agent.user|display_name }}</p>
+        <p>Phone: {{ property.agent.phone_number }}</p>
+      </div>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+      {% if not can_edit %}
+        {% if chat %}<a href="{% url 'listings:conversation' chat.id %}" class="btn btn-quiet" style="width:100%;margin-bottom:6px">Open your conversation</a>{% endif %}
+        <form method="post" action="{% url 'listings:book_tour' property.id %}" class="bk">{% csrf_token %}
+          <label for="pd">Preferred date</label><input id="pd" type="date" name="preferred_date">
+          <label for="nt">Message (optional)</label><textarea id="nt" name="note" rows="3" maxlength="1000" placeholder="Anything the agent should know?"></textarea>
+          <button type="submit" class="btn" style="width:100%;margin-top:12px">Book a tour</button>
+        </form>
+      {% endif %}
+    {% else %}
+      <a href="{% url 'login' %}?next={{ request.path }}" class="btn" style="width:100%">Login to contact agent</a>
+    {% endif %}
+
+    {% if can_edit %}
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <a href="{% url 'listings:edit_listing' property.id %}" class="btn btn-quiet" style="flex:1">Edit Listing</a>
+        <a href="{% url 'listings:delete_listing' property.id %}" class="btn btn-danger" style="flex:1">Unlist Property</a>
+      </div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

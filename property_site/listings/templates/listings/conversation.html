@@ -1,0 +1,43 @@
+{% extends 'listings/base.html' %}
+{% load listing_extras %}
+{% block title %}Chat - Havalastaria{% endblock %}
+
+{% block content %}
+<div style="max-width:780px;margin:0 auto">
+  <a href="{% url 'listings:inbox' %}" class="back">&larr; Messages</a>
+  <div class="pn" style="padding:0;overflow:hidden">
+    <div class="ch-h">
+      <div>
+        <h3 style="margin:0"><a href="{% url 'listings:property_detail' chat.property.id %}" style="text-decoration:none">{{ chat.property.title }}</a></h3>
+        <div class="ar">{% if as_agent %}Client{% else %}Agent{% endif %}: {{ other|display_name }}{% if chat.preferred_date %} · Preferred date {{ chat.preferred_date|date:"d M Y" }}{% endif %}</div>
+      </div>
+      <div class="ac2">
+        <span class="bd2 {{ chat.status }}">{{ chat.get_status_display }}</span>
+        {% if as_agent and chat.status == 'pending' %}
+          <form method="post" action="{% url 'listings:tour_response' chat.id 'confirm' %}">{% csrf_token %}<button class="btn" style="padding:6px 14px;font-size:13px">Confirm tour</button></form>
+          <form method="post" action="{% url 'listings:tour_response' chat.id 'decline' %}">{% csrf_token %}<button class="pill">Decline</button></form>
+        {% endif %}
+      </div>
+    </div>
+    <div class="log" id="log">
+      {% for m in thread %}<div class="b{% if m.sender_id == user.id %} me{% endif %}">{{ m.body }}<small>{{ m.sender|display_name }} · {{ m.created_at|date:"d M, H:i" }}</small></div>{% endfor %}
+    </div>
+    <form method="post" class="ch-f" id="cf">{% csrf_token %}
+      <textarea name="body" rows="2" maxlength="2000" placeholder="Write a message..." aria-label="Message" required></textarea>
+      <button type="submit" class="btn">Send</button>
+    </form>
+  </div>
+</div>
+<script>
+(function(){
+var log=document.getElementById('log'),last={{ last_id }},url="{% url 'listings:chat_poll' chat.id %}",st="{{ chat.status }}";
+log.scrollTop=log.scrollHeight;
+function add(m){var d=document.createElement('div');d.className='b'+(m.mine?' me':'');d.textContent=m.body;var s=document.createElement('small');s.textContent=m.name+' · '+m.time;d.appendChild(s);log.appendChild(d);last=m.id}
+function poll(){fetch(url+'?after='+last,{credentials:'same-origin'}).then(function(r){return r.ok?r.json():null}).then(function(d){
+ if(!d)return;var near=log.scrollHeight-log.scrollTop-log.clientHeight<80;d.messages.forEach(add);
+ if(d.messages.length&&near)log.scrollTop=log.scrollHeight;if(d.status!==st)location.reload()}).catch(function(){})}
+setInterval(poll,4000);
+document.querySelector('#cf textarea').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();this.form.requestSubmit()}});
+})();
+</script>
+{% endblock %}

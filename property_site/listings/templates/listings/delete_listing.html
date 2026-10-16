@@ -1,0 +1,13 @@
+{% extends 'listings/base.html' %}
+
+{% block content %}
+<div class="card narrow" style="max-width:500px;text-align:center;margin-top:40px">
+  <h2 style="color:#E5484D">Unlist Property</h2>
+  <p>Are you sure you want to delete <strong>"{{ property.title }}"</strong>?</p>
+  <form method="post" style="margin-top:22px;display:flex;justify-content:center;gap:12px">
+    {% csrf_token %}
+    <a href="{% url 'listings:property_detail' property.id %}" class="btn btn-quiet">Cancel</a>
+    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+  </form>
+</div>
+{% endblock %}

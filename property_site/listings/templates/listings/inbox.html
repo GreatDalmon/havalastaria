@@ -1,0 +1,26 @@
+{% extends 'listings/base.html' %}
+{% load listing_extras %}
+{% block title %}Messages - Havalastaria{% endblock %}
+
+{% block content %}
+<div class="dash">
+  {% include 'listings/_sidebar.html' with active='inbox' %}
+  <div>
+    <div class="dh"><div><h1>Messages</h1><p>Tour requests and follow-ups</p></div></div>
+    <div class="pn" style="padding:0">
+      {% for c in chats %}
+      <a class="cr" href="{% url 'listings:conversation' c.id %}">
+        <div class="cav">{{ c.other|display_name|slice:":1" }}</div>
+        <div class="cm">
+          <div><b>{{ c.other|display_name }}</b> <span class="ar">· {{ c.property.title }}</span></div>
+          <div class="ar cp">{{ c.last_body|default:""|truncatechars:90 }}</div>
+        </div>
+        <div class="cs"><span class="bd2 {{ c.status }}">{{ c.get_status_display }}</span>{% if c.unread %}<b class="bdg">{{ c.unread }}</b>{% endif %}</div>
+      </a>
+      {% empty %}
+      <div class="none" style="padding:40px 20px">No conversations yet. Book a tour on any listing to start one.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

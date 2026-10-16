@@ -1,0 +1,50 @@
+{% extends 'listings/base.html' %}
+
+{% block content %}
+<section class="hero">
+  <h1>Havalastaria<span>Your New Kingdom</span></h1>
+  <p>Browse curated houses, apartments and condos. Search by name or location, then filter by bedrooms and price.</p>
+</section>
+
+<form method="get" action="{% url 'listings:index' %}" class="search-bar">
+  <input type="text" name="q" placeholder="Search by title or location..." value="{{ request.GET.q|default:'' }}" aria-label="Search">
+  <select name="bedrooms" aria-label="Bedrooms">
+    <option value="">Any Bedrooms</option>
+    <option value="1" {% if request.GET.bedrooms == '1' %}selected{% endif %}>1+ Bedrooms</option>
+    <option value="2" {% if request.GET.bedrooms == '2' %}selected{% endif %}>2+ Bedrooms</option>
+    <option value="3" {% if request.GET.bedrooms == '3' %}selected{% endif %}>3+ Bedrooms</option>
+    <option value="4" {% if request.GET.bedrooms == '4' %}selected{% endif %}>4+ Bedrooms</option>
+  </select>
+  <select name="sort" aria-label="Sort">
+    <option value="">Default Sorting</option>
+    <option value="low_price" {% if request.GET.sort == 'low_price' %}selected{% endif %}>Price: Low to High</option>
+    <option value="high_price" {% if request.GET.sort == 'high_price' %}selected{% endif %}>Price: High to Low</option>
+  </select>
+  <button type="submit" class="btn">Filter</button>
+</form>
+
+<div class="bar"><h2>Available Properties</h2></div>
+
+<div class="property-grid">
+  {% for property in properties %}
+    <a href="{% url 'listings:property_detail' property.id %}" class="property-card">
+      <div class="im{% if not property.image %} ph{% endif %}">
+        {% if property.image %}<img src="{{ property.image.url }}" alt="{{ property.title }}" loading="lazy" onerror="this.parentNode.classList.add('ph');this.remove()">{% endif %}
+        <span class="tag">{{ property.get_property_type_display }}</span>
+      </div>
+      <div class="property-card-body">
+        <div class="pr">${{ property.price|floatformat:'0g' }}</div>
+        <h3>{{ property.title }}</h3>
+        <div class="ar">{{ property.location|default:"Location not specified" }}</div>
+        <div class="sp">
+          <div>{{ property.bedrooms }} <span>beds</span></div>
+          <div>{{ property.bathrooms|floatformat:'-1' }} <span>baths</span></div>
+          <div>{{ property.square_feet|floatformat:'0g' }} <span>sq ft</span></div>
+        </div>
+      </div>
+    </a>
+  {% empty %}
+    <div class="empty"><h3>No properties found</h3><p>Try a different search or clear the filters.</p></div>
+  {% endfor %}
+</div>
+{% endblock %}

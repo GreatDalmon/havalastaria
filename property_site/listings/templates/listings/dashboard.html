@@ -1,0 +1,100 @@
+{% extends 'listings/base.html' %}
+{% load listing_extras %}
+{% block title %}Dashboard - Havalastaria{% endblock %}
+
+{% block content %}
+{% with currency="$" %}
+
+<div class="dash">
+  {% include 'listings/_sidebar.html' with active='dash' %}
+
+  <div>
+    <div class="dh">
+      <div><h1>Dashboard</h1><p>{{ scope }} · statistics and more</p></div>
+      <form method="get" action="{% url 'listings:index' %}"><input type="search" name="q" placeholder="Search listings..." aria-label="Search listings"><button class="btn">Search</button></form>
+    </div>
+
+    <div class="stats">
+      <div class="st"><small>Listings</small><b>{{ total }}</b><span>{{ new_this_month }} added this month</span></div>
+      <div class="st"><small>Portfolio value</small><b data-money="{{ value|floatformat:'0' }}">{{ currency }}{{ value|floatformat:'0g' }}</b><span>total asking price</span></div>
+      <div class="st"><small>Average price</small><b data-money="{{ avg|floatformat:'0' }}">{{ currency }}{{ avg|floatformat:'0g' }}</b><span>per listing</span></div>
+      <div class="st"><small>Members</small><b>{{ members }}</b><span>{{ agents }} agent{{ agents|pluralize }}</span></div>
+    </div>
+
+    <div class="r2">
+      <div class="pn"><h3>Important shortcuts</h3>
+        <div class="sc">
+          {% if is_agent %}<a href="{% url 'listings:create_listing' %}"><i>＋</i>New listing</a>{% endif %}
+          <a href="{% url 'listings:index' %}"><i>⌂</i>All listings</a>
+          <a href="{% url 'listings:index' %}?sort=low_price"><i>↓</i>Cheapest</a>
+          <a href="{% url 'listings:index' %}?sort=high_price"><i>↑</i>Priciest</a>
+          <a href="{% url 'listings:index' %}?bedrooms=4"><i>▤</i>4+ beds</a>
+          {% if user.is_superuser %}<a href="/admin/"><i>⚙</i>Admin</a>{% else %}<a href="{% url 'listings:index' %}?bedrooms=2"><i>▥</i>2+ beds</a>{% endif %}
+        </div>
+      </div>
+      <div class="pn"><h3>Featured listing</h3>
+        {% if featured %}
+        <a class="ft" href="{% url 'listings:property_detail' featured.id %}">
+          <div class="im{% if not featured.image %} ph{% endif %}">{% if featured.image %}<img src="{{ featured.image.url }}" alt="{{ featured.title }}" onerror="this.parentNode.classList.add('ph');this.remove()">{% endif %}</div>
+          <div><div class="pr">{{ currency }}{{ featured.price|floatformat:'0g' }}</div><h3 style="margin:2px 0">{{ featured.title }}</h3><div class="ar">{{ featured.location|default:"Location not specified" }}</div><div class="ar">{{ featured.bedrooms }} beds · {{ featured.bathrooms|floatformat:'-1' }} baths</div></div>
+        </a>
+        {% else %}<div class="none">No listings yet.</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="r2" style="grid-template-columns:1fr 1.2fr">
+      <div class="pn"><h3>{% if agent %}Agent profile{% else %}Your account{% endif %}</h3>
+        <div class="who"><div class="av">{{ user|display_name|slice:":1" }}</div>
+          <div><b class="f" style="font-size:20px">{{ user|display_name }}</b>
+            {% if agent %}<p>Phone: {{ agent.phone_number }}</p><p>{{ total }} active listing{{ total|pluralize }}</p>{% if agent.bio %}<p>{{ agent.bio }}</p>{% endif %}
+            {% else %}<p>Not an agent account. Ask an admin to add an Agent profile so you can create listings.</p>{% endif %}
+          </div></div>
+      </div>
+      <div class="pn"><h3>Recent listings</h3>
+        {% if recent %}<div class="tb"><table>
+          <tr><th>Title</th><th>Location</th><th>Price</th><th></th></tr>
+          {% for p in recent %}<tr><td>{{ p.title }}</td><td>{{ p.location|default:"-" }}</td><td>{{ currency }}{{ p.price|floatformat:'0g' }}</td>
+            <td><a href="{% url 'listings:property_detail' p.id %}">View</a>{% if agent and p.agent_id == agent.id %}<a href="{% url 'listings:edit_listing' p.id %}">Edit</a>{% endif %}</td></tr>{% endfor %}
+        </table></div>{% else %}<div class="none">Nothing here yet.</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="r3">
+      <div class="pn"><h3>Prices of recent listings</h3><div class="ch" id="c-line"></div></div>
+      <div class="pn"><h3>Listings per month</h3><div class="ch" id="c-bar"></div></div>
+      <div class="pn"><h3>By property type</h3><div class="ch" id="c-pie"></div></div>
+    </div>
+  </div>
+</div>
+
+{{ charts|json_script:"dd" }}
+<script>
+(function(){
+var D=JSON.parse(document.getElementById('dd').textContent),CUR="{{ currency|escapejs }}",
+COL=['var(--ac)','#FF9A76','#34C3A0','#F5C451','#C77DFF'];
+function fm(n){var a=Math.abs(n);return CUR+(a>=1e9?+(n/1e9).toFixed(1)+'B':a>=1e6?+(n/1e6).toFixed(1)+'M':a>=1e3?+(n/1e3).toFixed(0)+'K':n)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function put(id,h,d){document.getElementById(id).innerHTML=d&&d.length?h:'<div class="none">No data yet.</div>'}
+document.querySelectorAll('[data-money]').forEach(function(e){var v=+e.dataset.money;if(v>=1e7)e.textContent=fm(v)});
+// bars
+var b=D.months,mx=Math.max.apply(null,b.map(function(x){return x.v}).concat(1)),h='<svg viewBox="0 0 300 170" role="img" aria-label="Listings per month">';
+b.forEach(function(x,i){var w=Math.min(36,260/b.length-8),g=260/b.length,bh=x.v/mx*110,X=20+i*g+(g-w)/2;h+='<rect x="'+X+'" y="'+(130-bh)+'" width="'+w+'" height="'+bh+'" rx="8" fill="var(--ac)"/><text x="'+(X+w/2)+'" y="'+(122-bh)+'" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">'+x.v+'</text><text x="'+(X+w/2)+'" y="152" text-anchor="middle" font-size="12" fill="var(--mu)">'+esc(x.l)+'</text>'});
+put('c-bar',h+'</svg>',b);
+// donut
+var t=D.types,tot=t.reduce(function(s,x){return s+x.v},0),C=2*Math.PI*50,off=0;h='<svg viewBox="0 0 140 140" style="max-width:190px;margin:auto" role="img" aria-label="By property type"><g transform="rotate(-90 70 70)">';
+t.forEach(function(x,i){var L=x.v/tot*C;h+='<circle cx="70" cy="70" r="50" fill="none" stroke="'+COL[i%5]+'" stroke-width="22" stroke-dasharray="'+L+' '+(C-L)+'" stroke-dashoffset="'+(-off)+'"/>';off+=L});
+h+='</g><text x="70" y="76" text-anchor="middle" font-size="22" font-weight="800" fill="currentColor">'+tot+'</text></svg><div class="lg">';
+t.forEach(function(x,i){h+='<span><i style="background:'+COL[i%5]+'"></i>'+esc(x.l)+' ('+x.v+')</span>'});
+put('c-pie',h+'</div>',t);
+// line
+var p=D.prices,pm=Math.max.apply(null,p.map(function(x){return x.v}).concat(1)),n=p.length;
+h='<svg viewBox="0 0 400 170" role="img" aria-label="Prices of recent listings"><line x1="10" x2="390" y1="130" y2="130" stroke="var(--ln)"/>';
+var pts=p.map(function(x,i){return[n>1?20+i*(360/(n-1)):200,130-x.v/pm*100]});
+if(n>1)h+='<path d="M'+pts.map(function(q){return q.join(',')}).join(' L')+' L'+pts[n-1][0]+',130 L'+pts[0][0]+',130Z" fill="var(--ac)" opacity=".12"/><polyline points="'+pts.map(function(q){return q.join(',')}).join(' ')+'" fill="none" stroke="var(--ac)" stroke-width="3" stroke-linejoin="round"/>';
+pts.forEach(function(q,i){h+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="5" fill="var(--sf)" stroke="var(--ac)" stroke-width="3"><title>'+esc(p[i].l)+': '+fm(p[i].v)+'</title></circle>'});
+h+='<text x="10" y="160" font-size="12" fill="var(--mu)">Oldest</text><text x="390" y="160" text-anchor="end" font-size="12" fill="var(--mu)">Newest · max '+fm(pm)+'</text></svg>';
+put('c-line',h,p);
+})();
+</script>
+{% endwith %}
+{% endblock %}
