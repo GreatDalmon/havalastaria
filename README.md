@@ -1,5 +1,6 @@
 
 # Havalastaria: Your New Kingdom
+<img width="1834" height="987" alt="page_preview" src="https://github.com/user-attachments/assets/154b3285-1555-4242-8b34-f5b80fac38ed" />
 
 A property listing website built with Django. Browse houses, apartments and condos, book tours, and chat with agents. Agents manage their own listings from a dashboard, and a superuser manages agents and user accounts.
 
